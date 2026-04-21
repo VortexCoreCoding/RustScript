@@ -723,67 +723,189 @@ pub fn quit() {
 
 // LOGIC COMMANDS //
 
+// DONE: Equality test. Stack: a b -> (a == b)
 pub fn eq(interp: &mut Interpreter) {
     if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a == b));
     }
+    else {
+        println!("Error: eq expects 2 operands");
+    }
 }
 
+// DONE: Inequality test. Stack: a b -> (a != b)
 pub fn ne(interp: &mut Interpreter) {
     if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a != b));
     }
+    else {
+        println!("Error: ne expects 2 operands");
+    }
 }
 
+// DONE: Greater than or equal test string and int. Stack: a b -> (a >= b)
 pub fn ge(interp: &mut Interpreter) {
-    if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
+    if interp.op_stack.len() < 2 {
+        println!("Error: ge expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a >= b));
     }
-}
-
-pub fn gt(interp: &mut Interpreter) {
-    if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
+    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        interp.op_stack.push(PSValue::Bool(a >= b));
+    }
+    else {
+        println!("Error: ge expects two integers or two strings");
+    }
+}
+
+// DONE: Greater than test. Stack: a b -> (a > b)
+pub fn gt(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: gt expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a > b));
     }
-}
-
-pub fn le(interp: &mut Interpreter) {
-    if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
+    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        interp.op_stack.push(PSValue::Bool(a > b));
+    }
+    else {
+        println!("Error: gt expects two integers or two strings");
+    }
+}
+
+// DONE: Less than or equal test. Stack: a b -> (a <= b)
+pub fn le(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: le expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a <= b));
     }
-}
-
-pub fn lt(interp: &mut Interpreter) {
-    if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
+    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        interp.op_stack.push(PSValue::Bool(a <= b));
+    }
+    else {
+        println!("Error: le expects two integers or two strings");
+    }
+}
+
+// DONE: Less than test. Stack: a b -> (a < b)
+pub fn lt(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: lt expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a < b));
     }
-}
-
-pub fn and(interp: &mut Interpreter) {
-    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
+    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
-        interp.op_stack.push(PSValue::Bool(a && b));
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        interp.op_stack.push(PSValue::Bool(a < b));
+    }
+    else {
+        println!("Error: lt expects two integers or two strings");
     }
 }
 
-pub fn or(interp: &mut Interpreter) {
+// Logical AND. Stack: a b -> (a && b)
+pub fn and(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: and expects 2 operands");
+        return;
+    }
     if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
         (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        interp.op_stack.push(PSValue::Bool(a && b));
+    }
+    else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        let a_bool = a != 0;
+        let b_bool = b != 0;
+        if a_bool && b_bool {
+            interp.op_stack.push(PSValue::Int(1));
+        } else {
+            interp.op_stack.push(PSValue::Int(0));
+        }
+    }
+    else {
+        println!("Error: and expects 2 boolean or integer operands");
+    }
+}
+
+// Logical OR. Stack: a b -> (a || b)
+pub fn or(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: or expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a || b));
+    }
+    else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        let a_bool = a != 0;
+        let b_bool = b != 0;
+        if a_bool || b_bool {
+            interp.op_stack.push(PSValue::Int(1));
+        } else {
+            interp.op_stack.push(PSValue::Int(0));
+        }
+    }
+    else {
+        println!("Error: or expects 2 boolean or integer operands");
     }
 }
 
@@ -792,6 +914,14 @@ pub fn not(interp: &mut Interpreter) {
     if let Some(PSValue::Bool(value)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the operand
         interp.op_stack.push(PSValue::Bool(!value));
+    }
+    else if let Some(PSValue::Int(value)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the operand
+        let a = value == 0;
+        interp.op_stack.push(PSValue::Int(if a { 1 } else { 0 }));
+    }
+    else {
+        println!("Error: not expects a boolean or integer operand");
     }
 }
 

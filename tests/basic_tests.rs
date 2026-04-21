@@ -1,7 +1,7 @@
 // filepath: PostScriptInterpreter\tests\basic_tests.rs
 use ps_interpreter::{
     abs, add, and, begin, ceiling, clear, copy, count, dict, div, dup, end, eq,
-    exch, f, floor, ge, get, getinterval, gt, idiv, interpreter::ScopeMode,
+    exch, floor, ge, get, getinterval, gt, idiv,
     le, length, lt, maxlength, mul, ne, neg, not, or, pop, ps_def, ps_false,
     ps_for, ps_if, ps_ifelse, ps_mod, ps_repeat, ps_true, putinterval, round, sqrt, sub,
     Interpreter, PSValue,
@@ -311,9 +311,10 @@ fn test_count() {
 fn test_dict() {
     let mut interp = Interpreter::new();
 
+    interp.op_stack.push(PSValue::Int(10));
     dict(&mut interp);
 
-    if let Some(PSValue::Dict(_)) = interp.op_stack.pop() {
+    if let Some(PSValue::Dict(_, 10)) = interp.op_stack.pop() {
         // Dict created successfully
     } else {
         panic!("Dict not created");
@@ -323,8 +324,8 @@ fn test_dict() {
 #[test]
 fn test_maxlength() {
     let mut interp = Interpreter::new();
-
-    interp.op_stack.push(PSValue::Str("hello".into()));
+    interp.op_stack.push(PSValue::Int(5));
+    dict(&mut interp);
     maxlength(&mut interp);
     assert_eq!(interp.op_stack.pop(), Some(PSValue::Int(5)));
 }
@@ -389,16 +390,13 @@ fn test_and_or_not() {
 }
 
 #[test]
-fn test_true_false_f() {
+fn test_true_false() {
     let mut interp = Interpreter::new();
 
     ps_true(&mut interp);
     assert_eq!(interp.op_stack.pop(), Some(PSValue::Bool(true)));
 
     ps_false(&mut interp);
-    assert_eq!(interp.op_stack.pop(), Some(PSValue::Bool(false)));
-
-    f(&mut interp);
     assert_eq!(interp.op_stack.pop(), Some(PSValue::Bool(false)));
 }
 
@@ -410,6 +408,7 @@ fn test_lookup_searches_dict_stack() {
     interp.op_stack.push(PSValue::Int(10));
     ps_def(&mut interp);
 
+    interp.op_stack.push(PSValue::Int(3));
     dict(&mut interp);
     begin(&mut interp);
 
@@ -422,67 +421,6 @@ fn test_lookup_searches_dict_stack() {
     end(&mut interp);
 
     assert_eq!(interp.lookup("x"), Some(PSValue::Int(10)));
-}
-
-// Test for both dynamic and lexical scope
-#[test]
-fn test_scope_modes() {
-    let mut interp = Interpreter::new();
-
-    // Define a procedure that looks up 'x'
-    let proc = PSValue::Proc {
-        body: vec![PSValue::Name("x".into())],
-        env: None,
-    };
-    interp.op_stack.push(proc);
-    ps_def(&mut interp); // Define /proc
-
-    // Dynamic scope test
-    interp.op_stack.push(PSValue::Name("x".into()));
-    interp.op_stack.push(PSValue::Int(10));
-    ps_def(&mut interp); // Define /x in global scope
-
-    dict(&mut interp);
-    begin(&mut interp);
-
-    interp.op_stack.push(PSValue::Name("x".into()));
-    interp.op_stack.push(PSValue::Int(20));
-    ps_def(&mut interp); // Define /x in inner scope
-
-    assert_eq!(interp.lookup("proc"), Some(PSValue::Proc {
-        body: vec![PSValue::Name("x".into())],
-        env: None
-    })); // Fails because 
-    assert_eq!(interp.lookup("x"), Some(PSValue::Int(20))); // succeeds
-
-    end(&mut interp);
-
-    // Lexical scope test, togglable in the interpreter with flag: 
-    let mut interp_lex = Interpreter::new();
-    interp_lex.set_scope(ScopeMode::Lexical);
-
-    let proc_lex = PSValue::Proc {
-        body: vec![PSValue::Name("x".into())],
-        env: None,
-    };
-    interp_lex.op_stack.push(proc_lex);
-    ps_def(&mut interp_lex); // Define /proc
-
-    interp_lex.op_stack.push(PSValue::Name("x".into()));
-    interp_lex.op_stack.push(PSValue::Int(10));
-    ps_def(&mut interp_lex); // Define /x in global scope
-
-    dict(&mut interp_lex);
-    begin(&mut interp_lex);
-
-    interp_lex.op_stack.push(PSValue::Name("x".into()));
-    interp_lex.op_stack.push(PSValue::Int(20));
-    ps_def(&mut interp_lex); // Define /x in inner scope
-
-    assert_eq!(interp_lex.lookup("proc"), Some(PSValue::Proc {
-        body: vec![PSValue::Name("x".into())],
-        env: Some(vec![std::collections::HashMap::from([("x".to_string(), PSValue::Int(10))])])
-    })); // Fails
 }
 
 // Note: print, =, ==, and quit are not easily testable as they involve output or exit, so skipped.

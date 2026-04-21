@@ -41,14 +41,11 @@ pub fn execute(interp: &mut interpreter::Interpreter, program: Vec<types::PSValu
             }
             types::PSValue::Name(_) => interp.op_stack.push(token),
             types::PSValue::Proc { body, env: _ } => {
-                let proc_val = match interp.scope {
-                    interpreter::ScopeMode::Dynamic => types::PSValue::Proc { body, env: None },
-                    interpreter::ScopeMode::Lexical => {
-                        let captured: Vec<(std::collections::HashMap<String, PSValue>, i32)> = interp.dict_stack.snapshot();
-                        types::PSValue::Proc {
-                            body,
-                            env: Some(captured),
-                        }
+                let proc_val =  {
+                    let captured: Vec<(std::collections::HashMap<String, PSValue>, i32)> = interp.dict_stack.snapshot();
+                    types::PSValue::Proc {
+                        body,
+                        env: Some(captured),
                     }
                 };
                 interp.op_stack.push(proc_val);
@@ -103,7 +100,12 @@ pub fn execute(interp: &mut interpreter::Interpreter, program: Vec<types::PSValu
                     "quit" => commands::quit(),
                     _ => {
                         if let Some(val) = interp.lookup(&name) {
-                            interp.op_stack.push(val);
+                            match val {
+                                PSValue::Proc { body: _, env: _ } => {
+                                    exec_proc(interp, val);
+                                }
+                                _ => interp.op_stack.push(val),
+                            }
                         } else {
                             println!("Error: unknown command '{}'", name);
                         }
