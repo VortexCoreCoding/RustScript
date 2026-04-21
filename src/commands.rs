@@ -270,52 +270,63 @@ pub fn ps_mod(interp: &mut Interpreter) {
     }
 }
 
-// TODO: ALL below must be made safe and non-destructive for stack if wrong types or not enough operands, and should print an error message instead of doing nothing
-// Absolute value. Stack: x -> abs(x)
+// DONE: Absolute value. Stack: x -> abs(x)
 pub fn abs(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
             PSValue::Int(n) => interp.op_stack.push(PSValue::Int(n.abs())),
             PSValue::Float(f) => interp.op_stack.push(PSValue::Float(f.abs())),
-            _ => println!("Error: abs expects a number"),
+            _ => {
+                println!("Error: abs expects a number");
+                interp.op_stack.push(value); // Push the original value back if it's not a number
+            }
         }
     }
 }
 
-// Negate a number. Stack: x -> -x
+// DONE: Negate a number. Stack: x -> -x
 pub fn neg(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
             PSValue::Int(n) => interp.op_stack.push(PSValue::Int(-n)),
             PSValue::Float(f) => interp.op_stack.push(PSValue::Float(-f)),
-            _ => {}
+            _ => {
+                println!("Error: neg expects a number");
+                interp.op_stack.push(value); // Push the original value back if it's not a number
+            }
         }
     }
 }
 
-// Ceiling of a number. Stack: x -> ceiling(x)
+// DONE: Ceiling of a number. Stack: x -> ceiling(x)
 pub fn ceiling(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
             PSValue::Int(n) => interp.op_stack.push(PSValue::Int(n)),
             PSValue::Float(f) => interp.op_stack.push(PSValue::Int(f.ceil() as i32)),
-            _ => {}
+            _ => {
+                println!("Error: ceiling expects a number");
+                interp.op_stack.push(value); // Push the original value back if it's not a number
+            }
         }
     }
 }
 
-// Floor of a number. Stack: x -> floor(x)
+// DONE: Floor of a number. Stack: x -> floor(x)
 pub fn floor(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
             PSValue::Int(n) => interp.op_stack.push(PSValue::Int(n)),
             PSValue::Float(f) => interp.op_stack.push(PSValue::Int(f.floor() as i32)),
-            _ => {}
+            _ => {
+                println!("Error: floor expects a number");
+                interp.op_stack.push(value); // Push the original value back if it's not a number
+            }
         }
     }
 }
 
-// Round a number to the nearest integer. Stack: x -> round(x)
+// DONE: Round a number to the nearest integer. Stack: x -> round(x)
 pub fn round(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
@@ -328,12 +339,15 @@ pub fn round(interp: &mut Interpreter) {
                 };
                 interp.op_stack.push(PSValue::Int(rounded as i32));
             }
-            _ => {}
+            _ => {
+                println!("Error: round expects a number");
+                interp.op_stack.push(value); // Push the original value back if it's not a number
+            }
         }
     }
 }
 
-// Square root. Stack: x -> sqrt(x)
+// DONE: Square root. Stack: x -> sqrt(x)
 pub fn sqrt(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         match value {
@@ -343,7 +357,10 @@ pub fn sqrt(interp: &mut Interpreter) {
             PSValue::Float(f) if f >= 0.0 => {
                 interp.op_stack.push(PSValue::Float(f.sqrt()));
             }
-            _ => {}
+            _ => {
+                println!("Error: sqrt expects a non-negative number");
+                interp.op_stack.push(value); // Push the original value back if it's not a valid number
+            }
         }
     }
 }
