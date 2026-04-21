@@ -24,7 +24,7 @@ fn repl() {
         }
 
         let tokens = parse(trimmed, &mut interp);
-        println!("TOKENS: {:?}", tokens);
+        //println!("TOKENS: {:?}", tokens);
         ps_interpreter::execute(&mut interp, tokens);
 
         // Optional: show stack after each command (great for debugging / viva)

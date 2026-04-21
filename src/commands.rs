@@ -1,6 +1,7 @@
 use crate::{interpreter::Interpreter, types::PSValue};
 use std::io::{self, Write};
 
+// Used for simple = print
 fn value_text(value: &PSValue) -> String {
     match value {
         PSValue::Int(n) => n.to_string(),
@@ -8,10 +9,30 @@ fn value_text(value: &PSValue) -> String {
         PSValue::Bool(true) => "true".into(),
         PSValue::Bool(false) => "false".into(),
         PSValue::Str(s) => s.clone(),
-        PSValue::Name(n) => format!("/{}", n),
+        PSValue::Name(n) => format!("{}", n),
         PSValue::Literal(n) => n.clone(),
         PSValue::Dict(d, _) => format!("<<{} items>>", d.len()),
         PSValue::Proc { .. } => "{...}".into(),
+        // _ => format!("{:?}", value),
+    }
+}
+
+// Used for == print
+fn debug_value_text(value: &PSValue) -> String {
+    match value {
+        PSValue::Int(n) => n.to_string(),
+        PSValue::Float(f) => f.to_string(),
+        PSValue::Bool(true) => "true".into(),
+        PSValue::Bool(false) => "false".into(),
+        PSValue::Str(s) => format!("({})", s.clone()),
+        PSValue::Name(n) => format!("/{}", n),
+        PSValue::Literal(n) => n.clone(),
+        PSValue::Dict(_, _) => "-dict-".into(),
+        // Print the body of the proc for debugging, but not the captured environment
+        PSValue::Proc { body, env: _ } => {
+            let debug_body = body.iter().map(|v| debug_value_text(v)).collect::<Vec<_>>();
+            format!("{{{:?}}}", debug_body)
+        }
         // _ => format!("{:?}", value),
     }
 }
@@ -503,7 +524,7 @@ pub fn ps_def(interp: &mut Interpreter) {
 
 // STRING COMMANDS //
 
-// Returns the length of a string or dict. Stack: string -> length
+// DONE: Returns the length of a string or dict. Stack: string -> length
 pub fn length(interp: &mut Interpreter) {
     if let Some(PSValue::Str(s)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the string operand
@@ -719,10 +740,12 @@ pub fn not(interp: &mut Interpreter) {
     }
 }
 
+// DONE: Pushes the boolean value true onto the stack. Stack: -> true
 pub fn ps_true(interp: &mut Interpreter) {
     interp.op_stack.push(PSValue::Bool(true));
 }
 
+// DONE: Pushes the boolean value false onto the stack. Stack: -> false
 pub fn ps_false(interp: &mut Interpreter) {
     interp.op_stack.push(PSValue::Bool(false));
 }
@@ -730,21 +753,25 @@ pub fn ps_false(interp: &mut Interpreter) {
 
 // Input and Output Commands //
 
+// DONE: Prints the top string on the stack. Stack: string -> (prints string)
 pub fn print(interp: &mut Interpreter) {
-    if let Some(value) = interp.op_stack.pop() {
-        println!("{}", value_text(&value));
+    if let Some(PSValue::Str(value)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the string operand
+        println!("{}", value);
         io::stdout().flush().ok();
     }
 }
 
+// DONE: Prints the top value on the stack using its text representation. Stack: val -> (prints val as text)
 pub fn eq_print(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         println!("{}", value_text(&value));
     }
 }
 
+// DONE: Prints the top value on the stack using its debug representation. eg (string) using parenthesis
 pub fn eq_eq_print(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
-        println!("{:?}", value);
+        println!("{}", debug_value_text(&value));
     }
 }
