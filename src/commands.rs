@@ -66,7 +66,7 @@ pub fn add(interp: &mut Interpreter) {
 
     let a = interp.op_stack.peek_n(1).cloned();
     let b = interp.op_stack.peek_n(0).cloned();
-    println!("DEBUG: add operands: {:?} and {:?}", a, b);
+    // println!("DEBUG: add operands: {:?} and {:?}", a, b);
 
     match (a, b) {
         (Some(PSValue::Int(a)), Some(PSValue::Int(b))) => {
