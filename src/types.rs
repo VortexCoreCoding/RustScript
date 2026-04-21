@@ -11,8 +11,8 @@ pub enum PSValue {
 
     Proc {
         body: Vec<PSValue>,
-        env: Option<Vec<HashMap<String, PSValue>>>,
+        env: Option<Vec<(HashMap<String, PSValue>, i32)>>, // Captured environment for lexical scope
     },
 
-    Dict(HashMap<String, PSValue>),
+    Dict(HashMap<String, PSValue>, i32), // Dictionary with maxsize (ignored in this implementation)
 }

@@ -10,7 +10,7 @@ fn value_text(value: &PSValue) -> String {
         PSValue::Str(s) => s.clone(),
         PSValue::Name(n) => format!("/{}", n),
         PSValue::Literal(n) => n.clone(),
-        PSValue::Dict(d) => format!("<<{} items>>", d.len()),
+        PSValue::Dict(d, _) => format!("<<{} items>>", d.len()),
         PSValue::Proc { .. } => "{...}".into(),
         // _ => format!("{:?}", value),
     }
@@ -438,35 +438,49 @@ pub fn count(interp: &mut Interpreter) {
 
 // DICTIONARY COMMANDS //
 
-// Creates a new empty dictionary and pushes it onto the operand stack. Stack: -> dict
+// DONE: Creates a new empty dictionary and pushes it onto the operand stack. int -> dict
 pub fn dict(interp: &mut Interpreter) {
-    interp.op_stack.push(PSValue::Dict(Default::default()));
+    // Get int maxsize argument (ignored in this implementation)
+    if interp.op_stack.len() < 1 {
+        println!("Error: dict expects 1 operand");
+        return;
+    }
+    if let Some(PSValue::Int(maxsize)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the maxsize operand
+        interp.op_stack.push(PSValue::Dict(Default::default(), maxsize));
+    } else {
+        println!("Error: dict expects an integer operand");
+    }
 }
 
-// Returns the number of entries in a dictionary. Stack: dict -> n
+// DONE: Returns the maximum number of entries allowed in a dictionary. Stack: dict -> maxsize
 pub fn maxlength(interp: &mut Interpreter) {
-    if let Some(value) = interp.op_stack.pop() {
-        match value {
-            PSValue::Str(s) => interp.op_stack.push(PSValue::Int(s.len() as i32)),
-            PSValue::Dict(d) => interp.op_stack.push(PSValue::Int(d.len() as i32)),
-            _ => {}
-        }
+    if interp.op_stack.len() < 1 {
+        println!("Error: maxlength expects 1 operand");
+        return;
+    }
+    if let Some(PSValue::Dict(_, a)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the dict operand
+        interp.op_stack.push(PSValue::Int(a as i32));
+    } else {
+        println!("Error: maxlength expects a dictionary operand");
     }
 }
 
-// Begins a new dictionary context by pushing a dictionary onto the dictionary stack. Stack: dict -> (dict on dict stack)
+// DONE: Begins a new dictionary context by pushing a dictionary onto the dictionary stack. Stack: dict -> (dict on dict stack)
 pub fn begin(interp: &mut Interpreter) {
-    if let Some(PSValue::Dict(d)) = interp.op_stack.pop() {
-        interp.dict_stack.begin(d);
+    if let Some(PSValue::Dict(d , a)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the dict operand
+        interp.dict_stack.begin((d, a)); // Push the dict with maxsize (ignored in this implementation)
     }
 }
 
-// Ends the current dictionary context by popping the top dictionary from the dictionary stack. Stack: -> (removes top dict from dict stack)
+// DONE: Ends the current dictionary context by popping the top dictionary from the dictionary stack. Stack: -> (removes top dict from dict stack)
 pub fn end(interp: &mut Interpreter) {
     interp.dict_stack.end();
 }
 
-// Defines a name in the current dictionary. Stack: val /name -> (defines name as val)
+// DONE: Defines a name in the current dictionary. Stack: val /name -> (defines name as val)
 pub fn ps_def(interp: &mut Interpreter) {
     if interp.op_stack.len() < 2 {
         println!("Error: def expects 2 operands");
@@ -489,10 +503,15 @@ pub fn ps_def(interp: &mut Interpreter) {
 
 // STRING COMMANDS //
 
-// Returns the length of a string. Stack: string -> length
+// Returns the length of a string or dict. Stack: string -> length
 pub fn length(interp: &mut Interpreter) {
-    if let Some(PSValue::Str(s)) = interp.op_stack.pop() {
+    if let Some(PSValue::Str(s)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the string operand
         interp.op_stack.push(PSValue::Int(s.len() as i32));
+    }
+    else if let Some(PSValue::Dict(d, _)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the dict operand
+        interp.op_stack.push(PSValue::Int(d.len() as i32));
     }
 }
 

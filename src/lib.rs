@@ -44,7 +44,7 @@ pub fn execute(interp: &mut interpreter::Interpreter, program: Vec<types::PSValu
                 let proc_val = match interp.scope {
                     interpreter::ScopeMode::Dynamic => types::PSValue::Proc { body, env: None },
                     interpreter::ScopeMode::Lexical => {
-                        let captured: Vec<std::collections::HashMap<String, PSValue>> = interp.dict_stack.snapshot();
+                        let captured: Vec<(std::collections::HashMap<String, PSValue>, i32)> = interp.dict_stack.snapshot();
                         types::PSValue::Proc {
                             body,
                             env: Some(captured),

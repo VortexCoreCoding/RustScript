@@ -31,7 +31,7 @@ impl Interpreter {
     pub fn lookup(&self, name: &str) -> Option<PSValue> {
         // For dynamic scope, we search the dict stack from top to bottom
         for dict in self.dict_stack.iter().rev() {
-            if let Some(val) = dict.get(name) {
+            if let Some(val) = dict.0.get(name) {
                 return Some(val.clone());
             }
         }

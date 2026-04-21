@@ -15,7 +15,7 @@ fn tokenize(input: &str) -> Vec<String> {
             '{' => tokens.push("{".to_string()),
             '}' => tokens.push("}".to_string()),
             '(' => {
-                let mut string_content = String::new();
+                let mut string_content: String = String::new();
                 while let Some(c) = chars.next() {
                     if c == ')' {
                         break;
@@ -74,7 +74,7 @@ fn tokenize(input: &str) -> Vec<String> {
         }
     }
 
-    tokens
+    tokens // returns
 }
 
 fn parse_tokens(tokens: &[String], pos: &mut usize, interp: &mut interpreter::Interpreter) -> Vec<PSValue> {
@@ -127,6 +127,8 @@ fn parse_atom(tok: &str) -> PSValue {
         return PSValue::Bool(true);
     } else if tok == "false" {
         return PSValue::Bool(false);
+    } else if tok.starts_with('(') && tok.ends_with(')') {
+        return PSValue::Str(tok[1..tok.len() - 1].to_string());
     } else if tok.starts_with('/') {
         return PSValue::Name(tok[1..].to_string());
     } else {
