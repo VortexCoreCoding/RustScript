@@ -1,9 +1,8 @@
 // filepath: PostScriptInterpreter\tests\basic_tests.rs
-use ps_interpreter::*;
 use ps_interpreter::interpreter::{Interpreter, ScopeMode};
 use ps_interpreter::parser::parse;
 use ps_interpreter::types::PSValue;
-
+use ps_interpreter::*;
 
 // helper to run a program and return top of stack
 fn run(program: &str, scope: ScopeMode) -> Option<PSValue> {

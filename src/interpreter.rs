@@ -1,4 +1,4 @@
-use crate::{stack::OperandStack, dict::DictStack, types::PSValue};
+use crate::{dict::DictStack, stack::OperandStack, types::PSValue};
 
 pub enum ScopeMode {
     Dynamic,
@@ -15,7 +15,7 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             op_stack: OperandStack::new(),
-            dict_stack: DictStack::new(),  // Initialize with a global dictionary
+            dict_stack: DictStack::new(), // Initialize with a global dictionary
             scope: ScopeMode::Dynamic,
         }
     }

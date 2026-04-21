@@ -45,7 +45,7 @@ impl DictStack {
 
     pub fn end(&mut self) {
         if self.stack.len() > 1 {
-        self.stack.pop();
+            self.stack.pop();
         } else {
             println!("Error: Cannot end global dictionary scope");
         }

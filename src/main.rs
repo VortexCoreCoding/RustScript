@@ -1,4 +1,4 @@
-use ps_interpreter::{parse, Interpreter};
+use ps_interpreter::{Interpreter, parse};
 use std::io::{self, Write};
 
 fn repl() {

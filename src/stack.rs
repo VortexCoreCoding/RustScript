@@ -26,7 +26,7 @@ impl OperandStack {
         }
         self.stack.pop()
     }
-    
+
     pub fn len(&self) -> usize {
         self.stack.len()
     }
@@ -39,7 +39,6 @@ impl OperandStack {
         let index = self.stack.len().checked_sub(n + 1)?;
         self.stack.get(index).clone()
     }
-
 
     pub fn dup(&mut self) {
         if let Some(top) = self.stack.last().cloned() {

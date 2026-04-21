@@ -64,7 +64,12 @@ fn tokenize(input: &str) -> Vec<String> {
                 let mut word = String::new();
                 word.push(ch);
                 while let Some(&next) = chars.peek() {
-                    if next.is_whitespace() || next == '{' || next == '}' || next == '(' || next == ')' {
+                    if next.is_whitespace()
+                        || next == '{'
+                        || next == '}'
+                        || next == '('
+                        || next == ')'
+                    {
                         break;
                     }
                     word.push(chars.next().unwrap());
@@ -77,7 +82,11 @@ fn tokenize(input: &str) -> Vec<String> {
     tokens // returns
 }
 
-fn parse_tokens(tokens: &[String], pos: &mut usize, interp: &mut interpreter::Interpreter) -> Vec<PSValue> {
+fn parse_tokens(
+    tokens: &[String],
+    pos: &mut usize,
+    interp: &mut interpreter::Interpreter,
+) -> Vec<PSValue> {
     let mut result = Vec::new();
 
     while *pos < tokens.len() {

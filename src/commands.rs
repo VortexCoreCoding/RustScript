@@ -1,4 +1,7 @@
-use crate::{interpreter::{Interpreter, ScopeMode}, types::PSValue};
+use crate::{
+    interpreter::{Interpreter, ScopeMode},
+    types::PSValue,
+};
 use std::io::{self, Write};
 
 // Used for simple = print
@@ -32,8 +35,7 @@ fn debug_value_text(value: &PSValue) -> String {
         PSValue::Proc { body, env: _ } => {
             let debug_body = body.iter().map(|v| debug_value_text(v)).collect::<Vec<_>>();
             format!("{{{:?}}}", debug_body)
-        }
-        // _ => format!("{:?}", value),
+        } // _ => format!("{:?}", value),
     }
 }
 
@@ -52,7 +54,6 @@ fn debug_value_text(value: &PSValue) -> String {
 //         interp.op_stack.push(PSValue::Float(value));
 //     }
 // }
-
 
 // ARITHMETIC COMMANDS //
 
@@ -386,7 +387,6 @@ pub fn sqrt(interp: &mut Interpreter) {
     }
 }
 
-
 // STACK MANIPULATION COMMANDS //
 
 // DONE: Duplicates the top element of the operand stack. Stack: a -> a a
@@ -424,7 +424,7 @@ pub fn copy(interp: &mut Interpreter) {
 
         let n = n as usize;
         let mut temp = Vec::new();
-        
+
         for _ in 0..n {
             if let Some(value) = interp.op_stack.pop() {
                 temp.push(value);
@@ -440,8 +440,7 @@ pub fn copy(interp: &mut Interpreter) {
         for value in temp.iter().rev() {
             interp.op_stack.push(value.clone());
         }
-    }
-    else {
+    } else {
         println!("Error: copy expects an integer operand");
     }
 }
@@ -453,9 +452,10 @@ pub fn clear(interp: &mut Interpreter) {
 
 // DONE: pushes the # of elems in stack to the stack
 pub fn count(interp: &mut Interpreter) {
-    interp.op_stack.push(PSValue::Int(interp.op_stack.len() as i32));
+    interp
+        .op_stack
+        .push(PSValue::Int(interp.op_stack.len() as i32));
 }
-
 
 // DICTIONARY COMMANDS //
 
@@ -468,7 +468,9 @@ pub fn dict(interp: &mut Interpreter) {
     }
     if let Some(PSValue::Int(maxsize)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the maxsize operand
-        interp.op_stack.push(PSValue::Dict(Default::default(), maxsize));
+        interp
+            .op_stack
+            .push(PSValue::Dict(Default::default(), maxsize));
     } else {
         println!("Error: dict expects an integer operand");
     }
@@ -490,11 +492,10 @@ pub fn maxlength(interp: &mut Interpreter) {
 
 // DONE: Begins a new dictionary context by pushing a dictionary onto the dictionary stack. Stack: dict -> (dict on dict stack)
 pub fn begin(interp: &mut Interpreter) {
-    if let Some(PSValue::Dict(d , a)) = interp.op_stack.peek().cloned() {
+    if let Some(PSValue::Dict(d, a)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the dict operand
         interp.dict_stack.begin((d, a)); // Push the dict with maxsize (ignored in this implementation)
-    }
-    else {
+    } else {
         println!("Error: begin expects a dictionary operand");
     }
 }
@@ -524,7 +525,6 @@ pub fn ps_def(interp: &mut Interpreter) {
     }
 }
 
-
 // STRING COMMANDS //
 
 // DONE: Returns the length of a string or dict. Stack: string -> length
@@ -536,12 +536,10 @@ pub fn length(interp: &mut Interpreter) {
     if let Some(PSValue::Str(s)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the string operand
         interp.op_stack.push(PSValue::Int(s.len() as i32));
-    }
-    else if let Some(PSValue::Dict(d, _)) = interp.op_stack.peek().cloned() {
+    } else if let Some(PSValue::Dict(d, _)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the dict operand
         interp.op_stack.push(PSValue::Int(d.len() as i32));
-    }
-    else {
+    } else {
         println!("Error: length expects a string or dictionary operand");
     }
 }
@@ -552,20 +550,19 @@ pub fn get(interp: &mut Interpreter) {
         println!("Error: get expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Str(s)), Some(PSValue::Int(index))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Str(s)), Some(PSValue::Int(index))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         if index >= 0 && (index as usize) < s.len() {
             interp.op_stack.pop(); // Remove the index operand
             interp.op_stack.pop(); // Remove the string operand
             let byte = s.as_bytes()[index as usize] as i32;
             interp.op_stack.push(PSValue::Int(byte));
-        }
-        else {
+        } else {
             println!("Error: get index out of bounds");
         }
-    }
-    else {
+    } else {
         println!("Error: get expects a string and an integer operand");
     }
 }
@@ -576,9 +573,11 @@ pub fn getinterval(interp: &mut Interpreter) {
         println!("Error: getinterval expects 3 operands");
         return;
     }
-    if let (Some(PSValue::Int(count)), Some(PSValue::Int(index)), Some(PSValue::Str(s))) =
-        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(2).cloned())
-    {
+    if let (Some(PSValue::Int(count)), Some(PSValue::Int(index)), Some(PSValue::Str(s))) = (
+        interp.op_stack.peek_n(0).cloned(),
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(2).cloned(),
+    ) {
         let start = index as usize;
         let len = count as usize;
         if start <= s.len() && start + len <= s.len() {
@@ -587,12 +586,10 @@ pub fn getinterval(interp: &mut Interpreter) {
             interp.op_stack.pop(); // Remove string operand
             let substr: String = s[start..start + len].to_string();
             interp.op_stack.push(PSValue::Str(substr));
-        }
-        else {
+        } else {
             println!("Error: getinterval index/count out of bounds");
         }
-    }
-    else {
+    } else {
         println!("Error: getinterval expects a string and two integer operands");
     }
 }
@@ -604,26 +601,25 @@ pub fn putinterval(interp: &mut Interpreter) {
         return;
     }
 
-    if let (Some(PSValue::Str(source)), Some(PSValue::Int(index)), Some(PSValue::Str(mut dest))) =
-        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(2).cloned())
-    {
+    if let (Some(PSValue::Str(source)), Some(PSValue::Int(index)), Some(PSValue::Str(mut dest))) = (
+        interp.op_stack.peek_n(0).cloned(),
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(2).cloned(),
+    ) {
         let start = index as usize;
         if start + source.len() <= dest.len() {
             interp.op_stack.pop(); // Remove source operand
             interp.op_stack.pop(); // Remove index operand
             interp.op_stack.pop(); // Remove dest operand
             dest.replace_range(start..start + source.len(), &source);
-        }
-        else {
+        } else {
             println!("Error: putinterval index/source length out of bounds");
         }
         interp.op_stack.push(PSValue::Str(dest));
-    }
-    else {
+    } else {
         println!("Error: putinterval expects two strings and an integer operand");
     }
 }
-
 
 // CONTROL FLOW COMMANDS //
 
@@ -634,17 +630,17 @@ pub fn ps_if(interp: &mut Interpreter) {
         return;
     }
 
-    if let (Some(PSValue::Bool(c)), Some(PSValue::Proc { body, env })) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Bool(c)), Some(PSValue::Proc { body, env })) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         let proc_val = PSValue::Proc { body, env };
         interp.op_stack.pop();
         interp.op_stack.pop();
         if c {
             crate::exec_proc(interp, proc_val);
         }
-    }
-    else {
+    } else {
         println!("Error: if expects (bool proc)");
     }
 }
@@ -672,8 +668,7 @@ pub fn ps_ifelse(interp: &mut Interpreter) {
         } else {
             crate::exec_proc(interp, proc_false);
         }
-    }
-    else {
+    } else {
         println!("Error: ifelse expects (bool proc_true proc_false)");
     }
 }
@@ -684,16 +679,16 @@ pub fn ps_repeat(interp: &mut Interpreter) {
         println!("Error: repeat expects 2 operands");
         return;
     }
-    if let (Some(proc @ PSValue::Proc { .. }), Some(PSValue::Int(n))) =
-        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned())
-    {
+    if let (Some(proc @ PSValue::Proc { .. }), Some(PSValue::Int(n))) = (
+        interp.op_stack.peek_n(0).cloned(),
+        interp.op_stack.peek_n(1).cloned(),
+    ) {
         interp.op_stack.pop(); // Remove proc operand
         interp.op_stack.pop(); // Remove n operand
         for _ in 0..n {
             crate::exec_proc(interp, proc.clone());
         }
-    }
-    else {
+    } else {
         println!("Error: repeat expects (int proc)");
     }
 }
@@ -735,8 +730,7 @@ pub fn ps_for(interp: &mut Interpreter) {
                 i += step;
             }
         }
-    }
-    else {
+    } else {
         println!("Error: for expects (int start int step int end proc)");
     }
 }
@@ -746,29 +740,32 @@ pub fn quit() {
     std::process::exit(0);
 }
 
-
 // LOGIC COMMANDS //
 
 // DONE: Equality test. Stack: a b -> (a == b)
 pub fn eq(interp: &mut Interpreter) {
-    if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
+    if let (Some(b), Some(a)) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a == b));
-    }
-    else {
+    } else {
         println!("Error: eq expects 2 operands");
     }
 }
 
 // DONE: Inequality test. Stack: a b -> (a != b)
 pub fn ne(interp: &mut Interpreter) {
-    if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
+    if let (Some(b), Some(a)) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a != b));
-    }
-    else {
+    } else {
         println!("Error: ne expects 2 operands");
     }
 }
@@ -779,21 +776,21 @@ pub fn ge(interp: &mut Interpreter) {
         println!("Error: ge expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a >= b));
-    }
-    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a >= b));
-    }
-    else {
+    } else {
         println!("Error: ge expects two integers or two strings");
     }
 }
@@ -804,21 +801,21 @@ pub fn gt(interp: &mut Interpreter) {
         println!("Error: gt expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a > b));
-    }
-    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a > b));
-    }
-    else {
+    } else {
         println!("Error: gt expects two integers or two strings");
     }
 }
@@ -829,21 +826,21 @@ pub fn le(interp: &mut Interpreter) {
         println!("Error: le expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a <= b));
-    }
-    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a <= b));
-    }
-    else {
+    } else {
         println!("Error: le expects two integers or two strings");
     }
 }
@@ -854,21 +851,21 @@ pub fn lt(interp: &mut Interpreter) {
         println!("Error: lt expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a < b));
-    }
-    else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Str(a)), Some(PSValue::Str(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a < b));
-    }
-    else {
+    } else {
         println!("Error: lt expects two integers or two strings");
     }
 }
@@ -879,16 +876,17 @@ pub fn and(interp: &mut Interpreter) {
         println!("Error: and expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a && b));
-    }
-    else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         let a_bool = a != 0;
@@ -898,8 +896,7 @@ pub fn and(interp: &mut Interpreter) {
         } else {
             interp.op_stack.push(PSValue::Int(0));
         }
-    }
-    else {
+    } else {
         println!("Error: and expects 2 boolean or integer operands");
     }
 }
@@ -910,16 +907,17 @@ pub fn or(interp: &mut Interpreter) {
         println!("Error: or expects 2 operands");
         return;
     }
-    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a || b));
-    }
-    else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) =
-        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
-    {
+    } else if let (Some(PSValue::Int(a)), Some(PSValue::Int(b))) = (
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(0).cloned(),
+    ) {
         interp.op_stack.pop();
         interp.op_stack.pop();
         let a_bool = a != 0;
@@ -929,8 +927,7 @@ pub fn or(interp: &mut Interpreter) {
         } else {
             interp.op_stack.push(PSValue::Int(0));
         }
-    }
-    else {
+    } else {
         println!("Error: or expects 2 boolean or integer operands");
     }
 }
@@ -940,13 +937,11 @@ pub fn not(interp: &mut Interpreter) {
     if let Some(PSValue::Bool(value)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the operand
         interp.op_stack.push(PSValue::Bool(!value));
-    }
-    else if let Some(PSValue::Int(value)) = interp.op_stack.peek().cloned() {
+    } else if let Some(PSValue::Int(value)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the operand
         let a = value == 0;
         interp.op_stack.push(PSValue::Int(if a { 1 } else { 0 }));
-    }
-    else {
+    } else {
         println!("Error: not expects a boolean or integer operand");
     }
 }
@@ -960,7 +955,6 @@ pub fn ps_true(interp: &mut Interpreter) {
 pub fn ps_false(interp: &mut Interpreter) {
     interp.op_stack.push(PSValue::Bool(false));
 }
-
 
 // INPUT AND OUTPUT COMMANDS //
 
@@ -988,7 +982,7 @@ pub fn eq_eq_print(interp: &mut Interpreter) {
 }
 
 // DONE: Prints a help message listing available commands
-pub fn ps_help () {
+pub fn ps_help() {
     println!("Available commands:");
     println!("Arithmetic: add, sub, mul, div, idiv, mod, abs, neg, ceiling, floor, round, sqrt");
     println!("Stack Manipulation: dup, exch, pop, copy, clear, count");
@@ -997,7 +991,9 @@ pub fn ps_help () {
     println!("Control Flow: if, ifelse, repeat, for");
     println!("Logic: eq, ne, ge, gt, le, lt, and, or, not");
     println!("Input/Output: print, eq_print (prints text), eq_eq_print (prints debug)");
-    println!("Other/Debugging: quit, -l (lexical scope), -d (dynamic scope), -m (see current mode), -s (full stack print), help");
+    println!(
+        "Other/Debugging: quit, -l (lexical scope), -d (dynamic scope), -m (see current mode), -s (full stack print), help"
+    );
 }
 
 // DONE: Prints the full contents of the operand stack with indices. Stack: -> (prints full stack)
