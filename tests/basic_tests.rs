@@ -1,11 +1,20 @@
 // filepath: PostScriptInterpreter\tests\basic_tests.rs
-use ps_interpreter::{
-    abs, add, and, begin, ceiling, clear, copy, count, dict, div, dup, end, eq,
-    exch, floor, ge, get, getinterval, gt, idiv,
-    le, length, lt, maxlength, mul, ne, neg, not, or, pop, ps_def, ps_false,
-    ps_for, ps_if, ps_ifelse, ps_mod, ps_repeat, ps_true, putinterval, round, sqrt, sub,
-    Interpreter, PSValue,
-};
+use ps_interpreter::*;
+use ps_interpreter::interpreter::{Interpreter, ScopeMode};
+use ps_interpreter::parser::parse;
+use ps_interpreter::types::PSValue;
+
+
+// helper to run a program and return top of stack
+fn run(program: &str, scope: ScopeMode) -> Option<PSValue> {
+    let mut interp = Interpreter::new();
+    interp.set_scope(scope);
+
+    let tokens = parse(program, &mut interp);
+    execute(&mut interp, tokens);
+
+    interp.op_stack.pop()
+}
 
 #[test]
 fn test_add() {
@@ -421,6 +430,86 @@ fn test_lookup_searches_dict_stack() {
     end(&mut interp);
 
     assert_eq!(interp.lookup("x"), Some(PSValue::Int(10)));
+}
+
+#[test]
+fn test_dynamic_scoping_basic() {
+    let program = "
+        /x 10 def
+        /f { x } def
+        /x 20 def
+        f
+    ";
+
+    let result = run(program, ScopeMode::Dynamic);
+
+    assert_eq!(result, Some(PSValue::Int(20)));
+}
+
+#[test]
+fn test_lexical_scoping_basic() {
+    let program = "
+        /x 10 def
+        /f { x } def
+        /x 20 def
+        f
+    ";
+
+    let result = run(program, ScopeMode::Lexical);
+
+    assert_eq!(result, Some(PSValue::Int(10)));
+}
+
+#[test]
+fn test_dynamic_scoping_nested() {
+    let program = "
+        /x 10 def
+        /g { x } def
+        /f { /x 20 def g } def
+        f
+    ";
+
+    let result = run(program, ScopeMode::Dynamic);
+
+    assert_eq!(result, Some(PSValue::Int(20)));
+}
+
+#[test]
+fn test_lexical_scoping_nested() {
+    let program = "
+        /x 10 def
+        /g { x } def
+        /f { /x 20 def g } def
+        f
+    ";
+
+    let result = run(program, ScopeMode::Lexical);
+
+    assert_eq!(result, Some(PSValue::Int(10)));
+}
+
+#[test]
+fn test_closure_behavior() {
+    let program = "
+        /x 5 def
+        /makeAdder {
+            /y exch def
+            { x y add }
+        } def
+
+        /add10 10 makeAdder def
+        /x 100 def
+        add10
+    ";
+
+    let dynamic = run(program, ScopeMode::Dynamic);
+    let lexical = run(program, ScopeMode::Lexical);
+
+    // dynamic sees x = 100
+    assert_eq!(dynamic, Some(PSValue::Int(110)));
+
+    // lexical captures x = 5
+    assert_eq!(lexical, Some(PSValue::Int(15)));
 }
 
 // Note: print, =, ==, and quit are not easily testable as they involve output or exit, so skipped.
