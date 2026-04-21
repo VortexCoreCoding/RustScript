@@ -12,7 +12,7 @@ pub use commands::{
     add, sub, dup, exch, ps_def, ps_if, ps_ifelse, ps_repeat, ps_for, length, get,
     getinterval, putinterval, mul, div, idiv, ps_mod, abs, neg, ceiling, floor, round,
     sqrt, pop, copy, clear, count, dict, maxlength, begin, end, eq, ne, ge, gt, le,
-    lt, and, or, not, ps_true, ps_false, print, eq_print, eq_eq_print,
+    lt, and, or, not, ps_true, ps_false, print, eq_print, eq_eq_print, ps_help, quit,
 };
 
 pub fn exec_proc(interp: &mut interpreter::Interpreter, proc: types::PSValue) {
@@ -98,6 +98,11 @@ pub fn execute(interp: &mut interpreter::Interpreter, program: Vec<types::PSValu
                     "=" => commands::eq_print(interp),
                     "==" => commands::eq_eq_print(interp),
                     "quit" => commands::quit(),
+                    "help" => commands::ps_help(),
+                    "-s" => commands::print_full_stack(interp),
+                    "-l" => commands::set_lexical_scope(interp),
+                    "-d" => commands::set_dynamic_scope(interp),
+                    "-m" => commands::print_scope_mode(interp),
                     _ => {
                         if let Some(val) = interp.lookup(&name) {
                             match val {

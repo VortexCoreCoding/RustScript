@@ -7,7 +7,7 @@ fn repl() {
 
     loop {
         // prompt: ps<x>
-        let stack_size = interp.op_stack.count();
+        let stack_size = interp.op_stack.len();
         print!("ps<{}> ", stack_size);
         io::stdout().flush().unwrap();
 
@@ -28,7 +28,7 @@ fn repl() {
         ps_interpreter::execute(&mut interp, tokens);
 
         // Optional: show stack after each command (great for debugging / viva)
-        interp.op_stack.print_stack();
+        //interp.op_stack.print_stack();
         // You might want to add a getter instead of exposing internals
         // quick hack:
         // println!("{:?}", interp.op_stack);

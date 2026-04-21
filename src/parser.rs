@@ -37,28 +37,28 @@ fn tokenize(input: &str) -> Vec<String> {
                 }
                 tokens.push(format!("({})", string_content));
             }
-            '-' => {
-                // Flag to convert from lexical to dynamic and back (-l for lexical, -d for dynamic)
-                if let Some(next) = chars.next() {
-                    if next == 'l' {
-                        tokens.push("-l".to_string()); // TODO: make into a real flag token instead of string
-                    } else if next == 'd' {
-                        tokens.push("-d".to_string()); // Also it currently triggers on -d in the middle of a word, which is not ideal
-                    } else {
-                        // If it's not a flag, treat it as part of a number or word
-                        let mut word = String::new();
-                        word.push('-');
-                        word.push(next);
-                        while let Some(&next) = chars.peek() {
-                            if next.is_whitespace() || next == '{' || next == '}' || next == '(' || next == ')' {
-                                break;
-                            }
-                            word.push(chars.next().unwrap());
-                        }
-                        tokens.push(word);
-                    }
-                }
-            }
+            // '-' => {
+            //     // Flag to convert from lexical to dynamic and back (-l for lexical, -d for dynamic)
+            //     if let Some(next) = chars.next() {
+            //         if next == 'l' {
+            //             tokens.push("-l".to_string()); // TODO: make into a real flag token instead of string
+            //         } else if next == 'd' {
+            //             tokens.push("-d".to_string()); // Also it currently triggers on -d in the middle of a word, which is not ideal
+            //         } else {
+            //             // If it's not a flag, treat it as part of a number or word
+            //             let mut word = String::new();
+            //             word.push('-');
+            //             word.push(next);
+            //             while let Some(&next) = chars.peek() {
+            //                 if next.is_whitespace() || next == '{' || next == '}' || next == '(' || next == ')' {
+            //                     break;
+            //                 }
+            //                 word.push(chars.next().unwrap());
+            //             }
+            //             tokens.push(word);
+            //         }
+            //     }
+            // }
             c if c.is_whitespace() => continue,
             _ => {
                 let mut word = String::new();
@@ -94,16 +94,6 @@ fn parse_tokens(tokens: &[String], pos: &mut usize, interp: &mut interpreter::In
             }
             "}" => {
                 return result;
-            }
-            "-l" => {
-                // Flag to convert from lexical to dynamic and back
-                interp.set_scope(interpreter::ScopeMode::Lexical);
-                println!("Switched to Lexical Scope");
-            }
-            "-d" => {
-                // Flag to convert from lexical to dynamic and back
-                interp.set_scope(interpreter::ScopeMode::Dynamic);
-                println!("Switched to Dynamic Scope");
             }
             _ => result.push(parse_atom(tok)),
         }

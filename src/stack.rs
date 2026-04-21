@@ -58,10 +58,6 @@ impl OperandStack {
         self.stack.clear();
     }
 
-    pub fn count(&self) -> usize {
-        self.stack.len()
-    }
-
     pub fn print_stack(&self) {
         for val in &self.stack {
             println!("{:?}", val);

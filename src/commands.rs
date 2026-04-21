@@ -1,4 +1,4 @@
-use crate::{interpreter::Interpreter, types::PSValue};
+use crate::{interpreter::{Interpreter, ScopeMode}, types::PSValue};
 use std::io::{self, Write};
 
 // Used for simple = print
@@ -453,7 +453,7 @@ pub fn clear(interp: &mut Interpreter) {
 
 // DONE: pushes the # of elems in stack to the stack
 pub fn count(interp: &mut Interpreter) {
-    interp.op_stack.push(PSValue::Int(interp.op_stack.count() as i32));
+    interp.op_stack.push(PSValue::Int(interp.op_stack.len() as i32));
 }
 
 
@@ -627,76 +627,99 @@ pub fn putinterval(interp: &mut Interpreter) {
 
 // CONTROL FLOW COMMANDS //
 
-// Executes a procedure if the condition is true. Stack: bool proc -> (executes proc if bool is true)
+// DONE: Executes a procedure if the condition is true. Stack: bool proc -> (executes proc if bool is true)
 pub fn ps_if(interp: &mut Interpreter) {
     if interp.op_stack.len() < 2 {
         println!("Error: if expects 2 operands");
         return;
     }
 
-    let cond = interp.op_stack.peek_n(1);
-    let proc = interp.op_stack.peek_n(0);
-
-    match (cond, proc) {
-        (Some(PSValue::Bool(c)), Some(PSValue::Proc { .. })) => {
-            let proc_val = interp.op_stack.peek().unwrap().clone();
-
-            if *c {
-                crate::exec_proc(interp, proc_val);
-            }
-
-            interp.op_stack.pop();
-            interp.op_stack.pop();
+    if let (Some(PSValue::Bool(c)), Some(PSValue::Proc { body, env })) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        let proc_val = PSValue::Proc { body, env };
+        interp.op_stack.pop();
+        interp.op_stack.pop();
+        if c {
+            crate::exec_proc(interp, proc_val);
         }
-        _ => {
-            println!("Error: if expects (bool proc)");
-        }
+    }
+    else {
+        println!("Error: if expects (bool proc)");
     }
 }
 
-// Executes one of two procedures based on a condition. Stack: bool proc_true proc_false -> (executes proc_true if bool, else proc_false)
+// DONE: Executes one of two procedures based on a condition. Stack: bool proc_true proc_false -> (executes proc_true if bool, else proc_false)
 pub fn ps_ifelse(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 3 {
+        println!("Error: ifelse expects 3 operands");
+        return;
+    }
     if let (
         Some(proc_false @ PSValue::Proc { .. }),
         Some(proc_true @ PSValue::Proc { .. }),
         Some(PSValue::Bool(cond)),
     ) = (
-        interp.op_stack.pop(),
-        interp.op_stack.pop(),
-        interp.op_stack.pop(),
+        interp.op_stack.peek_n(0).cloned(),
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(2).cloned(),
     ) {
+        interp.op_stack.pop(); // Remove proc_false operand
+        interp.op_stack.pop(); // Remove proc_true operand
+        interp.op_stack.pop(); // Remove condition operand
         if cond {
             crate::exec_proc(interp, proc_true);
         } else {
             crate::exec_proc(interp, proc_false);
         }
     }
+    else {
+        println!("Error: ifelse expects (bool proc_true proc_false)");
+    }
 }
 
-// Repeats a procedure a specified number of times. Stack: n proc -> (executes proc n times)
+// DONE: Repeats a procedure a specified number of times. Stack: n proc -> (executes proc n times)
 pub fn ps_repeat(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: repeat expects 2 operands");
+        return;
+    }
     if let (Some(proc @ PSValue::Proc { .. }), Some(PSValue::Int(n))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned())
     {
+        interp.op_stack.pop(); // Remove proc operand
+        interp.op_stack.pop(); // Remove n operand
         for _ in 0..n {
             crate::exec_proc(interp, proc.clone());
         }
     }
+    else {
+        println!("Error: repeat expects (int proc)");
+    }
 }
 
-// Executes a procedure for a range of values. Stack: start step end proc -> (pushes i and executes proc for i from start to end by step)
+// DONE: Executes a procedure for a range of values. Stack: start step end proc -> (pushes i and executes proc for i from start to end by step)
 pub fn ps_for(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 4 {
+        println!("Error: for expects 4 operands");
+        return;
+    }
     if let (
         Some(proc @ PSValue::Proc { .. }),
         Some(PSValue::Int(end)),
         Some(PSValue::Int(step)),
         Some(PSValue::Int(start)),
     ) = (
-        interp.op_stack.pop(),
-        interp.op_stack.pop(),
-        interp.op_stack.pop(),
-        interp.op_stack.pop(),
+        interp.op_stack.peek_n(0).cloned(),
+        interp.op_stack.peek_n(1).cloned(),
+        interp.op_stack.peek_n(2).cloned(),
+        interp.op_stack.peek_n(3).cloned(),
     ) {
+        interp.op_stack.pop(); // Remove proc operand
+        interp.op_stack.pop(); // Remove end operand
+        interp.op_stack.pop(); // Remove step operand
+        interp.op_stack.pop(); // Remove start operand
+
         let mut i = start;
 
         if step > 0 {
@@ -713,9 +736,12 @@ pub fn ps_for(interp: &mut Interpreter) {
             }
         }
     }
+    else {
+        println!("Error: for expects (int start int step int end proc)");
+    }
 }
 
-// Simply exits the interpreter
+// DONE: Simply exits the interpreter
 pub fn quit() {
     std::process::exit(0);
 }
@@ -847,7 +873,7 @@ pub fn lt(interp: &mut Interpreter) {
     }
 }
 
-// Logical AND. Stack: a b -> (a && b)
+// DONE: Logical AND. Stack: a b -> (a && b)
 pub fn and(interp: &mut Interpreter) {
     if interp.op_stack.len() < 2 {
         println!("Error: and expects 2 operands");
@@ -878,7 +904,7 @@ pub fn and(interp: &mut Interpreter) {
     }
 }
 
-// Logical OR. Stack: a b -> (a || b)
+// DONE: Logical OR. Stack: a b -> (a || b)
 pub fn or(interp: &mut Interpreter) {
     if interp.op_stack.len() < 2 {
         println!("Error: or expects 2 operands");
@@ -958,5 +984,43 @@ pub fn eq_print(interp: &mut Interpreter) {
 pub fn eq_eq_print(interp: &mut Interpreter) {
     if let Some(value) = interp.op_stack.pop() {
         println!("{}", debug_value_text(&value));
+    }
+}
+
+// DONE: Prints a help message listing available commands
+pub fn ps_help () {
+    println!("Available commands:");
+    println!("Arithmetic: add, sub, mul, div, idiv, mod, abs, neg, ceiling, floor, round, sqrt");
+    println!("Stack Manipulation: dup, exch, pop, copy, clear, count");
+    println!("Dictionary: dict, maxlength, begin, end, def");
+    println!("String: length, get, getinterval, putinterval");
+    println!("Control Flow: if, ifelse, repeat, for");
+    println!("Logic: eq, ne, ge, gt, le, lt, and, or, not");
+    println!("Input/Output: print, eq_print (prints text), eq_eq_print (prints debug)");
+    println!("Other/Debugging: quit, -l (lexical scope), -d (dynamic scope), -m (see current mode), -s (full stack print), help");
+}
+
+// DONE: Prints the full contents of the operand stack with indices. Stack: -> (prints full stack)
+pub fn print_full_stack(interp: &mut Interpreter) {
+    println!("Full Stack:");
+    for i in 0..interp.op_stack.len() {
+        if let Some(value) = interp.op_stack.peek_n(i).cloned() {
+            println!("{}: {}", i, debug_value_text(&value));
+        }
+    }
+}
+
+pub fn set_lexical_scope(interp: &mut Interpreter) {
+    interp.set_scope(ScopeMode::Lexical);
+}
+
+pub fn set_dynamic_scope(interp: &mut Interpreter) {
+    interp.set_scope(ScopeMode::Dynamic);
+}
+
+pub fn print_scope_mode(interp: &mut Interpreter) {
+    match interp.get_scope() {
+        ScopeMode::Lexical => println!("Current scope mode: Lexical"),
+        ScopeMode::Dynamic => println!("Current scope mode: Dynamic"),
     }
 }
