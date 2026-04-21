@@ -494,6 +494,9 @@ pub fn begin(interp: &mut Interpreter) {
         interp.op_stack.pop(); // Remove the dict operand
         interp.dict_stack.begin((d, a)); // Push the dict with maxsize (ignored in this implementation)
     }
+    else {
+        println!("Error: begin expects a dictionary operand");
+    }
 }
 
 // DONE: Ends the current dictionary context by popping the top dictionary from the dictionary stack. Stack: -> (removes top dict from dict stack)
@@ -526,6 +529,10 @@ pub fn ps_def(interp: &mut Interpreter) {
 
 // DONE: Returns the length of a string or dict. Stack: string -> length
 pub fn length(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 1 {
+        println!("Error: length expects 1 operand");
+        return;
+    }
     if let Some(PSValue::Str(s)) = interp.op_stack.peek().cloned() {
         interp.op_stack.pop(); // Remove the string operand
         interp.op_stack.push(PSValue::Int(s.len() as i32));
@@ -534,44 +541,86 @@ pub fn length(interp: &mut Interpreter) {
         interp.op_stack.pop(); // Remove the dict operand
         interp.op_stack.push(PSValue::Int(d.len() as i32));
     }
-}
-
-// Returns the ASCII value of a character at a given index in a string. Stack: string index -> char_code
-pub fn get(interp: &mut Interpreter) {
-    if let (Some(PSValue::Int(index)), Some(PSValue::Str(s))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
-    {
-        if index >= 0 && (index as usize) < s.len() {
-            let byte = s.as_bytes()[index as usize] as i32;
-            interp.op_stack.push(PSValue::Int(byte));
-        }
+    else {
+        println!("Error: length expects a string or dictionary operand");
     }
 }
 
-// Extracts a substring from a string. Stack: string index count -> substring
+// DONE: Returns the ASCII value of a character at a given index in a string. Stack: string index -> char_code
+pub fn get(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 2 {
+        println!("Error: get expects 2 operands");
+        return;
+    }
+    if let (Some(PSValue::Str(s)), Some(PSValue::Int(index))) =
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
+    {
+        if index >= 0 && (index as usize) < s.len() {
+            interp.op_stack.pop(); // Remove the index operand
+            interp.op_stack.pop(); // Remove the string operand
+            let byte = s.as_bytes()[index as usize] as i32;
+            interp.op_stack.push(PSValue::Int(byte));
+        }
+        else {
+            println!("Error: get index out of bounds");
+        }
+    }
+    else {
+        println!("Error: get expects a string and an integer operand");
+    }
+}
+
+// DONE: Extracts a substring from a string. Stack: string index count -> substring
 pub fn getinterval(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 3 {
+        println!("Error: getinterval expects 3 operands");
+        return;
+    }
     if let (Some(PSValue::Int(count)), Some(PSValue::Int(index)), Some(PSValue::Str(s))) =
-        (interp.op_stack.pop(), interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(2).cloned())
     {
         let start = index as usize;
         let len = count as usize;
         if start <= s.len() && start + len <= s.len() {
+            interp.op_stack.pop(); // Remove count operand
+            interp.op_stack.pop(); // Remove index operand
+            interp.op_stack.pop(); // Remove string operand
             let substr: String = s[start..start + len].to_string();
             interp.op_stack.push(PSValue::Str(substr));
         }
+        else {
+            println!("Error: getinterval index/count out of bounds");
+        }
+    }
+    else {
+        println!("Error: getinterval expects a string and two integer operands");
     }
 }
 
-// Copies a source string into a destination string starting at a given index. Stack: dest index source -> (modifies dest)
+// DONE: Copies a source string into a destination string starting at a given index. Stack: dest index source -> (modifies dest)
 pub fn putinterval(interp: &mut Interpreter) {
+    if interp.op_stack.len() < 3 {
+        println!("Error: putinterval expects 3 operands");
+        return;
+    }
+
     if let (Some(PSValue::Str(source)), Some(PSValue::Int(index)), Some(PSValue::Str(mut dest))) =
-        (interp.op_stack.pop(), interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(0).cloned(), interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(2).cloned())
     {
         let start = index as usize;
         if start + source.len() <= dest.len() {
+            interp.op_stack.pop(); // Remove source operand
+            interp.op_stack.pop(); // Remove index operand
+            interp.op_stack.pop(); // Remove dest operand
             dest.replace_range(start..start + source.len(), &source);
         }
+        else {
+            println!("Error: putinterval index/source length out of bounds");
+        }
         interp.op_stack.push(PSValue::Str(dest));
+    }
+    else {
+        println!("Error: putinterval expects two strings and an integer operand");
     }
 }
 
@@ -675,20 +724,24 @@ pub fn quit() {
 // LOGIC COMMANDS //
 
 pub fn eq(interp: &mut Interpreter) {
-    if let (Some(b), Some(a)) = (interp.op_stack.pop(), interp.op_stack.pop()) {
+    if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a == b));
     }
 }
 
 pub fn ne(interp: &mut Interpreter) {
-    if let (Some(b), Some(a)) = (interp.op_stack.pop(), interp.op_stack.pop()) {
+    if let (Some(b), Some(a)) = (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned()) {
+        interp.op_stack.pop();
+        interp.op_stack.pop();
         interp.op_stack.push(PSValue::Bool(a != b));
     }
 }
 
 pub fn ge(interp: &mut Interpreter) {
     if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a >= b));
     }
@@ -696,7 +749,7 @@ pub fn ge(interp: &mut Interpreter) {
 
 pub fn gt(interp: &mut Interpreter) {
     if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a > b));
     }
@@ -704,7 +757,7 @@ pub fn gt(interp: &mut Interpreter) {
 
 pub fn le(interp: &mut Interpreter) {
     if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a <= b));
     }
@@ -712,7 +765,7 @@ pub fn le(interp: &mut Interpreter) {
 
 pub fn lt(interp: &mut Interpreter) {
     if let (Some(PSValue::Int(b)), Some(PSValue::Int(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a < b));
     }
@@ -720,7 +773,7 @@ pub fn lt(interp: &mut Interpreter) {
 
 pub fn and(interp: &mut Interpreter) {
     if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a && b));
     }
@@ -728,14 +781,16 @@ pub fn and(interp: &mut Interpreter) {
 
 pub fn or(interp: &mut Interpreter) {
     if let (Some(PSValue::Bool(b)), Some(PSValue::Bool(a))) =
-        (interp.op_stack.pop(), interp.op_stack.pop())
+        (interp.op_stack.peek_n(1).cloned(), interp.op_stack.peek_n(0).cloned())
     {
         interp.op_stack.push(PSValue::Bool(a || b));
     }
 }
 
+// DONE: Logical NOT. Stack: bool -> !bool
 pub fn not(interp: &mut Interpreter) {
-    if let Some(PSValue::Bool(value)) = interp.op_stack.pop() {
+    if let Some(PSValue::Bool(value)) = interp.op_stack.peek().cloned() {
+        interp.op_stack.pop(); // Remove the operand
         interp.op_stack.push(PSValue::Bool(!value));
     }
 }
@@ -751,7 +806,7 @@ pub fn ps_false(interp: &mut Interpreter) {
 }
 
 
-// Input and Output Commands //
+// INPUT AND OUTPUT COMMANDS //
 
 // DONE: Prints the top string on the stack. Stack: string -> (prints string)
 pub fn print(interp: &mut Interpreter) {
